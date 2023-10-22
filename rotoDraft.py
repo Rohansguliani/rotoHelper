@@ -10,22 +10,53 @@ def aggregate_team_stats(team, df):
         'FG3M': 0, 'FG3A': 0, 'TO': 0, 'rpg': 0,
         'apg': 0, 'spg': 0, 'bpg': 0, 'ppg': 0, 'egp':0
     }
+    weighted_stats = {
+        'ppg': 0, 'rpg': 0, 'apg': 0, 'spg': 0,
+        'bpg': 0, 'TO': 0
+    }
+    # Define multipliers
+    multipliers = {
+        'ppg': 1, 'rpg': 1, 'apg': 2, 'spg': 3,
+        'bpg': 3, 'TO': -2
+    }
+
     for player in team:
         player_stats = df[df['Name'] == player].iloc[0]
         for key in stats.keys():
             stats[key] += player_stats[key]
-            
+        for key in weighted_stats.keys():
+            weighted_stats[key] += (player_stats[key] * player_stats['egp']) * multipliers[key]
+    
+    num_players = len(team)
+    if num_players > 0:
+        for key in weighted_stats.keys():
+            weighted_stats[key] /= num_players
+
     # Calculate percentages
     stats['fg%'] = (stats['fgm'] / stats['fga']) * 100 if stats['fga'] != 0 else 0
     stats['ft%'] = (stats['FTM'] / stats['FTA']) * 100 if stats['FTA'] != 0 else 0
     stats['3p%'] = (stats['FG3M'] / stats['FG3A']) * 100 if stats['FG3A'] != 0 else 0
     
+    # Update stats with weighted averages
+    for key in weighted_stats.keys():
+        stats[key] = weighted_stats[key]
+    
     return stats
 
-
-# Function to evaluate a team score based on Roto categories
+# Function to evaluate a team score based on Roto categories and 'egp'
 def evaluate_team_score(team_stats):
-    return sum(team_stats.values()) - 2 * team_stats['TO'] - 2*team_stats['egp']
+    roto_score = sum([
+        team_stats['ppg'] * team_stats['egp'], 
+        team_stats['rpg'] * team_stats['egp'], 
+        team_stats['apg'] * team_stats['egp'],
+        team_stats['spg'] * team_stats['egp'], 
+        team_stats['bpg'] * team_stats['egp'], 
+        team_stats['fg%'] * team_stats['egp'],
+        team_stats['ft%'] * team_stats['egp'], 
+        team_stats['3p%'] * team_stats['egp']
+    ]) - 2 * (team_stats['TO'] * team_stats['egp'])
+    return roto_score
+
 
     
 # Function to simulate the draft

@@ -44,7 +44,17 @@ def calculate_per_game_stats(df):
         stats["fg%"] = 0
     else:
         stats["fg%"] = (stats["fgm"] / stats["fga"]) * 100
+
+    if stats["FG3A"] == 0:
+        stats["3PT%"] = 0
+    else:
+        stats["3PT%"] = (stats["FG3M"] / stats["FG3A"]) * 100
     
+    if stats["FTA"] == 0:
+        stats["ft%"] = 0
+    else:
+        stats["ft%"] = (stats["FTM"] / stats["FTA"]) * 100
+
     return stats
 
 # Function to populate player_stats dictionary
@@ -77,6 +87,8 @@ def populate_player_stats(player_name, season):
         "FG3A": stats["FG3A"],
         "FTM": stats["FTM"],
         "FTA": stats["FTA"],
+        "ft%": stats["ft%"],
+        "3PT%": stats["3PT%"],
         "egp": 75  # Example value
     }
     return player_stats
@@ -102,6 +114,8 @@ if __name__ == "__main__":
 
     # Fetch stats for each player and append to DataFrame
     for player in all_players:
+        if player['is_active'] == 'False':
+            continue
         player_name = player['full_name']
         player_id = get_player_id(player_name)
         
